@@ -116,7 +116,7 @@ int main(int argc, char *argv[]){
 
 	std::string input;
 	while(true){
-		if(mode==1&&net->closed == 0&&netmode!=game->turn){
+		if(mode==1&&net->closed == 0&&(netmode!=game->turn||!net->ready)){
 			std::tuple<std::string, int, int> action = net->get();
 			if(std::get<0>(action).find("nodata")!=std::string::npos){
 				net->closed = 1;
