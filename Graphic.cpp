@@ -35,7 +35,7 @@ void Graphic::Put(std::vector<std::vector<int>> &delta){//[n][0] white/black [n]
 void Graphic::changeturn(int turn){
 	if(turn == -1)	std::cout<<"\e[1;38Hblack turn"<<std::endl;
 	else if(turn == 1)	std::cout<<"\e[1;38Hwhite turn"<<std::endl;
-	std::cout<<"\e[2;38Hx y:";
+	std::cout<<"\e[2;38H\e[0Kx y:";
 }
 
 void Graphic::end(){
@@ -43,5 +43,5 @@ void Graphic::end(){
 }
 
 void Graphic::netwait(std::string room){
-	std::cout<<"\e[2;38HWaiting guest at"<<room<<"..."<<std::endl;
+	std::cout<<"\e[2;38HWaiting guest at "<<room<<"..."<<std::endl;
 }
