@@ -42,6 +42,6 @@ void Graphic::end(){
 	std::cout<<"\e[19;1Hended?"<<std::endl;
 }
 
-void Graphic::netwait(){
-	std::cout<<"Waiting guest..."<<std::endl;
+void Graphic::netwait(std::string room){
+	std::cout<<"\e[2;38HWaiting guest at"<<room<<"..."<<std::endl;
 }

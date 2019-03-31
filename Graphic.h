@@ -8,6 +8,6 @@ class Graphic{
 	void Put(std::vector<std::vector<int>> &delta);
 	void changeturn(int turn);
 	void end();
-	void netwait();
+	void netwait(std::string room);
 	~Graphic();
 };

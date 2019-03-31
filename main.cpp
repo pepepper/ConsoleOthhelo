@@ -112,7 +112,7 @@ int main(int argc, char *argv[]){
 	graphic.StartGame();
 	graphic.Put(game->board->delta);
 	graphic.changeturn(game->turn);
-	if(mode == 1)graphic.netwait();
+	if(mode == 1)graphic.netwait(std::to_string(room));
 
 	std::string input;
 	while(true){
