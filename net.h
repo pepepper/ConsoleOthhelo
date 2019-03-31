@@ -17,7 +17,6 @@ class Net{
 	public:
 	Net();
 	~Net();
-	void closing();
 	int makeconnect(std::string host);
 	std::tuple<int, int> login(long long room, std::string pass);
 	std::tuple<int, int> login(long long room);

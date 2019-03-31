@@ -1,5 +1,4 @@
-﻿#define SDL_MAIN_HANDLED
-#include <memory>
+﻿#include <memory>
 #include "Graphic.h"
 #include "Game.h"
 #include "dialogbox.h"
@@ -8,39 +7,35 @@
 #include <iostream>
 #include <typeinfo>
 #include <tuple>
-#include <thread>
+#include<sstream>
 
 int intGetOption(const char *message){
 	std::string temp;
 	std::cout << message;
-	std::cin >> temp;
+	std::getline(std::cin, temp);
 	return std::stoi(temp);
 }
 
 long long llGetOption(const char *message){
 	std::string temp;
 	std::cout << message;
-	std::cin >> temp;
+	std::getline(std::cin, temp);
 	return std::stoll(temp);
 }
 
 std::string strGetOption(const char *message){
 	std::string temp;
 	std::cout << message;
-	std::cin >> temp;
+	std::getline(std::cin, temp);
 	return temp;
 }
 
 int main(int argc, char *argv[]){
 	std::string ip, pass, arg;
 	long long room;
-	SDL_Event e;
 	int x, y, mode = -1, netmode = -1, netret, freeput = 0;
-	Uint32 eventid;
 	std::unique_ptr<Game> game;
 	std::unique_ptr<Net> net;
-	std::thread netthread;
-	//部屋番号指定
 	try{
 		mode = intGetOption("モードを選択してください\n0:オフラインで交互にプレイする 1:オンラインでプレイする場合 :");
 		if(mode != 0 && mode != 1)throw std::invalid_argument("");
@@ -81,7 +76,7 @@ int main(int argc, char *argv[]){
 					game.reset(new Game(x, y));
 				}
 				std::cout << "パスワードを設定しますか?" << std::endl << "0:設定しない 1:設定する :";
-				std::cin >> arg;
+				std::getline(std::cin, arg);
 				if(!arg.compare("1")){
 					pass = strGetOption("パスワードを入力してください:");
 						room = net->makeroom(game->board->boardx/2, game->board->boardy/2,pass);
@@ -92,7 +87,7 @@ int main(int argc, char *argv[]){
 				std::tuple<int, int> size;
 				room = llGetOption("部屋番号を入力してください:");
 				std::cout << "パスワードが設定されていますか?" << std::endl << "0:設定されていない 1:設定されている :";
-				std::cin >> arg;
+				std::getline(std::cin, arg);
 				if(arg.compare("0") && arg.compare("1"))throw std::invalid_argument("");
 				else if(!arg.compare("1")){
 					pass = strGetOption("パスワードを入力してください:");
@@ -111,32 +106,28 @@ int main(int argc, char *argv[]){
 		std::cout << "入力が不正です:終了します";
 		return 1;
 	}
-	SDL_Init(SDL_INIT_EVERYTHING);
-	eventid = SDL_RegisterEvents(1);
 	Graphic graphic;
 	dialogbox dialog;
 
 	graphic.StartGame();
 	graphic.Put(game->board->delta);
 	graphic.changeturn(game->turn);
-	graphic.update();
 	if(mode == 1)graphic.netwait();
-	if(mode == 1)netthread = std::thread([&game, &net, &graphic, &freeput, &netmode, &eventid]{
-		SDL_Event graph;
-		while(net->closed == 0){
+
+	std::string input;
+	while(true){
+		if(mode==1&&net->closed == 0){
 			std::tuple<std::string, int, int> action = net->get();
 			if(std::get<0>(action).find("nodata")!=std::string::npos){
 				net->closed = 1;
 			} else if(std::get<0>(action).find("FREEPUT")!=std::string::npos && netmode != game->turn){
 				game->put(std::get<1>(action), std::get<2>(action), freeput);
-				SDL_zero(graph);
-				graph.type = eventid;
-				SDL_PushEvent(&graph);
+				graphic.Put(game->board->delta);
+				graphic.changeturn(game->turn);
 			} else if(std::get<0>(action).find("PUT")!=std::string::npos && netmode != game->turn){
 				game->put(std::get<1>(action), std::get<2>(action));
-				SDL_zero(graph);
-				graph.type = eventid;
-				SDL_PushEvent(&graph);
+				graphic.Put(game->board->delta);
+				graphic.changeturn(game->turn);
 			}else if(std::get<0>(action).find("CLOSED")!=std::string::npos){
 				net->closed = 1;
 			} else if(std::get<0>(action).find("READY")!=std::string::npos){
@@ -145,68 +136,58 @@ int main(int argc, char *argv[]){
 				net->ready = 1;
 			}
 		}
-										 });
-	while(true){
-		while(SDL_WaitEvent(&e)){
-			if(e.type == eventid){
-				graphic.Put(game->board->delta);
-				graphic.changeturn(game->turn);
-				graphic.update();
+		while(true){
+			std::getline(std::cin,input);
+			if(!input.compare("f")){
+				freeput=!freeput;
+				std::cout<<"\e[2;42H\e[0K";
+				continue;
 			}
-			switch(e.type){
-				case SDL_WINDOWEVENT:
-					if(e.window.event == SDL_WINDOWEVENT_EXPOSED){
-						graphic.update();
+			try{
+				std::stringstream stream(input);
+				std::string temp;
+				std::vector<std::string> pos;
+				while(std::getline(stream, temp, ' ')){
+					if(!temp.empty()){
+					pos.push_back(temp);
 					}
-					break;
-				case SDL_KEYUP:
-					if(e.key.keysym.sym == SDLK_F2)freeput = !freeput;
-					break;
-				case SDL_MOUSEBUTTONUP:
-					x = (int)(e.button.x / 48);
-					y = (int)(e.button.y / 48);
-					if(mode == 0 || (netmode == game->turn&&net->ready)){
-						if(freeput == 0){
-							if(game->put(x, y)){
-								if(mode == 1)net->put(x, y);
-								graphic.Put(game->board->delta);
-								graphic.changeturn(game->turn);
-								graphic.update();
-							}
-						} else if(game->put(x, y, freeput)){
-							if(mode == 1)net->freeput(x, y);
-							graphic.Put(game->board->delta);
-							graphic.changeturn(game->turn);
-							graphic.update();
-						}
-						if(game->full){
-							dialog.EndGameDialogBox(game->b, game->w, game->howturn);
-							graphic.end();
-							game->full = false;
-						}
-					}
-					break;
-				case SDL_QUIT:
-					if(dialog.QuitinGameDialogbox()){
-						game.release();
-						graphic.~Graphic();
-						SDL_Quit();
-						if(mode == 1){
-							net->closing();
-							netthread.join();
-							net.release();
-						}
-						return 0;
-					}
-					break;
+				}
+				x=stoi(pos[0]);
+				y=stoi(pos[1]);
+				break;
+			}catch(const std::invalid_argument& e){
+				std::cout<<"\e[2;42H\e[0K";
 			}
+		}
+		if(mode == 0 || (netmode == game->turn&&net->ready)){
+			if(freeput == 0){
+				if(game->put(x, y)){
+					if(mode == 1)net->put(x, y);
+					graphic.Put(game->board->delta);
+					graphic.changeturn(game->turn);
+				}else{
+					std::cout<<"\e[2;42H\e[0K";
+				}
+			} else {
+				if(game->put(x, y, freeput)){
+					if(mode == 1)net->freeput(x, y);
+					graphic.Put(game->board->delta);
+					graphic.changeturn(game->turn);
+				}else{
+					std::cout<<"\e[2;42H\e[0K";
+				}
+			}
+			if(game->full){
+				dialog.EndGameDialogBox(game->b, game->w, game->howturn);
+				graphic.end();
+				game->full = false;
+			}
+		}
 			if(mode == 1 && net->closed == 1 && net->ready == 1){
 				dialog.ConnectionclosedDialogBox();
 				graphic.end();
 				net->ready=0;
 			}
-		}
 	}
-	netthread.join();
 	return 0;
 }

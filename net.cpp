@@ -8,6 +8,9 @@
 Net::Net():closed(0), ready(0){}
 
 Net::~Net(){
+	std::string request = "CLOSED";
+	if(send(sock, request.c_str(), request.size() + 1, 0) == -1)std::cout << "send error:"  << std::endl;
+	closed = 1;
 	close(sock);
 }
 
@@ -31,6 +34,9 @@ Net::Net():closed(0), ready(0){
 }
 
 Net::~Net(){
+	std::string request = "CLOSED";
+	if(send(sock, request.c_str(), request.size() + 1, 0) == -1)std::cout << "send error:"  << std::endl;
+	closed = 1;
 	closesocket(sock);
 	WSACleanup();
 }
@@ -52,12 +58,6 @@ int Net::makeconnect(std::string ip){
 	return 0;
 }
 #endif
-
-void Net::closing(){
-	std::string request = "CLOSED";
-	if(send(sock, request.c_str(), request.size() + 1, 0) == -1)std::cout << "send error:"  << std::endl;
-	closed = 1;
-}
 
 std::tuple<int, int> Net::login(long long room){
 	std::string request = "LOGIN " + std::to_string(room);
