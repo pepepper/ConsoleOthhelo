@@ -152,8 +152,10 @@ int main(int argc, char *argv[]){
 					pos.push_back(temp);
 					}
 				}
-				x=stoi(pos[0]);
-				y=stoi(pos[1]);
+				if(pos.size()==2){
+					x=stoi(pos[0]);
+					y=stoi(pos[1]);
+				}
 				break;
 			}catch(const std::invalid_argument& e){
 				std::cout<<"\e[2;42H\e[0K";
