@@ -6,6 +6,7 @@ dialogbox::dialogbox(){}
 dialogbox::~dialogbox(){}
 
 int dialogbox::QuitinGameDialogbox(){
+	return 0;
 }
 
 int dialogbox::EndGameDialogBox(int black, int white, int turn){
