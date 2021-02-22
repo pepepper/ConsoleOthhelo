@@ -127,36 +127,40 @@ int main(int argc, char *argv[]){
 
 	graphic.StartGame();
 	graphic.Put(game->board->delta);
-	graphic.changeturn(game->turn);
-	if(mode == 1&&netmode==-1)graphic.netwait(std::to_string(room));
-
+	if(mode==1){
+		graphic.netchangeturn(game->turn,netmode);
+		if(netmode==-1)graphic.netwait(std::to_string(room));
+	}else graphic.changeturn(game->turn);
 	std::string input;
 	while(true){
 		if(mode==1&&net->closed == 0&&(netmode!=game->turn||!net->ready)){
 			std::tuple<std::string, int, int> action = net->get();
-			if(std::get<0>(action).find("nodata")!=std::string::npos){
+			if(std::get<0>(action).find("nodata")!=std::string::npos || std::get<0>(action).find("CLOSE")!=std::string::npos){
 				net->closed = 1;
 			} else if(std::get<0>(action).find("FREEPUT")!=std::string::npos && netmode != game->turn){
 				game->put(std::get<1>(action), std::get<2>(action), freeput);
 				graphic.Put(game->board->delta);
-				graphic.changeturn(game->turn);
+				graphic.netchangeturn(game->turn,netmode);
 			} else if(std::get<0>(action).find("PUT")!=std::string::npos && netmode != game->turn){
 				game->put(std::get<1>(action), std::get<2>(action));
 				graphic.Put(game->board->delta);
-				graphic.changeturn(game->turn);
+				graphic.netchangeturn(game->turn,netmode);
 			} else if(std::get<0>(action).find("READY")!=std::string::npos){
-				graphic.changeturn(game->turn);
+				graphic.netchangeturn(game->turn,netmode);
 				net->started = 1;
 				net->ready = 1;
 				continue;
 			}
 		}
-		while(true){
+		while(mode==0||net->closed==0){
 			std::getline(std::cin,input);
 			if(!input.compare("free")){
 				freeput=!freeput;
 				std::cout<<"\e[2;42H\e[0K";
 				continue;
+			}else if(!input.compare("end")){
+				net->closing();
+				break;
 			}
 			try{
 				std::stringstream stream(input);
@@ -171,7 +175,8 @@ int main(int argc, char *argv[]){
 				if(game->put(x, y)){
 					if(mode == 1)net->put(x, y);
 					graphic.Put(game->board->delta);
-					graphic.changeturn(game->turn);
+					if(mode == 1)graphic.netchangeturn(game->turn,netmode);
+					else graphic.changeturn(game->turn);
 				}else{
 					std::cout<<"\e[2;42H\e[0K";
 				}
@@ -179,7 +184,8 @@ int main(int argc, char *argv[]){
 				if(game->put(x, y, freeput)){
 					if(mode == 1)net->freeput(x, y);
 					graphic.Put(game->board->delta);
-					graphic.changeturn(game->turn);
+					if(mode == 1)graphic.netchangeturn(game->turn,netmode);
+					else graphic.changeturn(game->turn);
 				}else{
 					std::cout<<"\e[2;42H\e[0K";
 				}
@@ -194,6 +200,7 @@ int main(int argc, char *argv[]){
 				dialog.ConnectionclosedDialogBox();
 				graphic.end();
 				net->ready=0;
+				break;
 			}
 	}
 	return 0;

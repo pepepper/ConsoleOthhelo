@@ -59,6 +59,8 @@ int Net::makeconnect(std::string ip){
 }
 
 void Net::closing(){
+	std::string request="CLOSE";
+	send_with_retry(request);
 	BIO_shutdown_wr(sock);
 	closed=1;
 }
